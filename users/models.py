@@ -30,3 +30,4 @@ class User(AbstractUser):
     email = models.EmailField(null=True, blank=True, unique=True)
     phone_number = models.CharField(max_length=13, blank=True, null=True, unique=True)
     photo = models.ImageField(upload_to="user_photos", null=True, blank=True)
+
