@@ -2,7 +2,7 @@ from xml.dom import ValidationErr
 
 from rest_framework import serializers
 
-from shared.utility import check_email_or_phone
+from shared.utility import check_email_or_phone, send_email
 from users.models import User, VIA_EMAIL, VIA_PHONE
 
 
@@ -30,10 +30,13 @@ class SignUpSerializer(serializers.ModelSerializer):
 
         if user.auth_type == VIA_EMAIL:
             code = user.create_verify_code(verify_type=VIA_EMAIL)
+            send_email(user.email, code)
 
         elif user.auth_type == VIA_PHONE:
             code = user.create_verify_code(verify_type=VIA_PHONE)
+
         user.save()
+        return user
 
     def validate(self, data):
         super(SignUpSerializer, self).validate(data)
@@ -47,12 +50,12 @@ class SignUpSerializer(serializers.ModelSerializer):
 
         if input_type == "email":
             data = {
-                "email": input_type,
+                "email": user_input,
                 "auth_type": VIA_EMAIL
             }
         elif input_type == "phone":
             data = {
-                "phone_number": input_type,
+                "phone_number": user_input,
                 "auth_type": VIA_PHONE
             }
         else:
@@ -67,3 +70,9 @@ class SignUpSerializer(serializers.ModelSerializer):
     def validate_email_phone_number(self, value):
         value = value.lower()
         return value
+
+    def to_representation(self, instance):
+        data = super(SignUpSerializer, self).to_representation(instance)
+        data.update(instance.token())
+
+        return data
