@@ -1,6 +1,7 @@
 import re
 import threading
 
+import phonenumbers
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from rest_framework.exceptions import ValidationError
@@ -9,30 +10,26 @@ email_regex = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
 phone_regex = re.compile(r"(\+[0-9]+\s*)?(\([0-9]+\))?[\s0-9\-]+[0-9]+")
 
 
-def check_email_or_phone(email_or_phone):
-    # phone_number = phonenumbers.parse(email_or_phone)
+def check_email_or_phone(email_or_phone: str) -> str:
+    email_or_phone = email_or_phone.strip()
+
+    # Avval email ekanligini tekshiramiz
     if re.fullmatch(email_regex, email_or_phone):
-        email_or_phone = "email"
+        return "email"
 
+    # Keyin telefon raqam ekanligini tekshiramiz
+    try:
+        phone_number = phonenumbers.parse(email_or_phone, "UZ")  # kerakli region kodi
+        if phonenumbers.is_valid_number(phone_number):
+            return "phone"
+    except phonenumbers.NumberParseException:
+        pass  # agar xato bo‘lsa, shunchaki davom etadi
 
-    elif re.fullmatch(phone_regex, email_or_phone):
-
-        email_or_phone = 'phone'
-
-
-    else:
-
-        data = {
-
-            "success": False,
-
-            "message": "Email yoki telefon raqamingiz notogri"
-
-        }
-
-        raise ValidationError(data)
-
-    return email_or_phone
+    # Agar hech biri bo‘lmasa, xatolik
+    raise ValidationError({
+        "success": False,
+        "message": "Email yoki telefon raqam formati noto‘g‘ri"
+    })
 
 
 class EmailThread(threading.Thread):
@@ -44,7 +41,6 @@ class EmailThread(threading.Thread):
     def run(self):
         try:
             self.email.send()
-            print("[EMAIL] Sent successfully.")
         except Exception as e:
             print(f"[EMAIL ERROR] {e}")
 
@@ -67,7 +63,7 @@ def send_email(email, code):
         'email/authentication/activate_account.html',
         {"code": code}
     )
-    print("Rendered HTML:\n", html_content)
+
     Email.send_email(
         {
             "subject": "Ro'yhatdan o'tish",

@@ -1,6 +1,7 @@
-from xml.dom import ValidationErr
+
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from shared.utility import check_email_or_phone, send_email
 from users.models import User, VIA_EMAIL, VIA_PHONE
@@ -63,12 +64,26 @@ class SignUpSerializer(serializers.ModelSerializer):
                 "success": False,
                 "message": "Elektron manzil yoki telefon raqam kiritilishi lozim!"
             }
-            raise ValidationErr(data)
-        print("data", data)
+            raise ValidationError(data)
+
         return data
 
     def validate_email_phone_number(self, value):
         value = value.lower()
+
+        if value and User.objects.filter(email=value).exists():
+            data = {
+                "success": False,
+                "message": f"Ushbu elektron manzil ma'lumotlar omborida mavjud! Iltimos boshqa elektron manzil kiriting"
+            }
+            raise ValidationError(data)
+
+        elif value and User.objects.filter(phone_number=value).exists():
+            data = {
+                "success": False,
+                "message": f"Ushbu telefon raqam ma'lumotlar omborida mavjud! Iltimos boshqa raqam kiriting"
+            }
+            raise ValidationError(data)
         return value
 
     def to_representation(self, instance):
