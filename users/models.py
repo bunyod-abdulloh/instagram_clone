@@ -102,7 +102,7 @@ class UserConfirmation(BaseModel):
 
     code = models.CharField(max_length=4, )
     verify_type = models.CharField(max_length=31, choices=TYPE_CHOICES)
-    user = models.ForeignKey('users.User', models.CASCADE, related_name='verify_code')
+    user = models.ForeignKey('users.User', models.CASCADE, related_name='verify_codes')
     expiration_time = models.DateTimeField(null=True)
     is_confirmed = models.BooleanField(default=False)
 
@@ -110,9 +110,8 @@ class UserConfirmation(BaseModel):
         return str(self.user.__str__())
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            if self.verify_type == VIA_EMAIL:
+        if self.verify_type == VIA_EMAIL:
                 self.expiration_time = datetime.now() + timedelta(minutes=EMAIL_EXPIRE)
-            else:
-                self.expiration_time = datetime.now() + timedelta(minutes=PHONE_EXPIRE)
+        else:
+            self.expiration_time = datetime.now() + timedelta(minutes=PHONE_EXPIRE)
         super(UserConfirmation, self).save(*args, **kwargs)
