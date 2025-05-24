@@ -1,10 +1,9 @@
-
-
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from shared.utility import check_email_or_phone, send_email
-from users.models import User, VIA_EMAIL, VIA_PHONE
+from users.models import User, VIA_EMAIL, VIA_PHONE, CODE_VERIFIED, DONE
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -93,3 +92,78 @@ class SignUpSerializer(serializers.ModelSerializer):
         data.update(instance.token())
 
         return data
+
+
+class ChangeUserInformation(serializers.Serializer):
+    first_name = serializers.CharField(write_only=True, required=True)
+    last_name = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, data):
+        password = data.get('password', None)
+        confirm_password = data.get('confirm_password', None)
+        if password != confirm_password:
+            raise ValidationError(
+                {
+                    "message": "Parolingiz va tasdiqlash parolingiz bir-biriga teng emas"
+                }
+            )
+        if password:
+            validate_password(password)
+            validate_password(confirm_password)
+
+        return data
+
+    def validate_username(self, username):
+        if len(username) < 5 or len(username) > 30:
+            raise ValidationError(
+                {
+                    "message": "Username must be between 5 and 30 characters long"
+                }
+            )
+        if username.isdigit():
+            raise ValidationError(
+                {
+                    "message": "This username is entirely numeric"
+                }
+            )
+        return username
+
+    def validate_first_name(self, first_name):
+        if len(first_name) < 5 or len(first_name) > 30:
+            message = {
+                "message": "First_namening uzunligi 5 va 30 ta belgi orasida bo'lishi lozim!"
+            }
+            raise ValidationError(message)
+        if first_name.isdigit():
+            message = {
+                "message": "First_name faqat raqamlardan iborat bo'lishi mumkin emas!"
+            }
+            raise ValidationError(message)
+
+    def validate_last_name(self, last_name):
+        if len(last_name) < 5 or len(last_name) > 30:
+            message = {
+                "message": "Last_namening uzunligi 5 va 30 ta belgi orasida bo'lishi lozim!"
+            }
+            raise ValidationError(message)
+        if last_name.isdigit():
+            message = {
+                "message": "Last_name faqat raqamlardan iborat bo'lishi mumkin emas!"
+            }
+            raise ValidationError(message)
+
+    def update(self, instance, validated_data):
+
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.password = validated_data.get('password', instance.password)
+        instance.username = validated_data.get('username', instance.username)
+        if validated_data.get('password'):
+            instance.set_password(validated_data.get('password'))
+        if instance.auth_status == CODE_VERIFIED:
+            instance.auth_status = DONE
+        instance.save()
+        return instance
