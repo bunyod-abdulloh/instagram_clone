@@ -143,6 +143,8 @@ class ChangeUserInformation(serializers.Serializer):
             }
             raise ValidationError(message)
 
+        return first_name
+
     def validate_last_name(self, last_name):
         if len(last_name) < 5 or len(last_name) > 30:
             message = {
@@ -154,6 +156,8 @@ class ChangeUserInformation(serializers.Serializer):
                 "message": "Last_name faqat raqamlardan iborat bo'lishi mumkin emas!"
             }
             raise ValidationError(message)
+
+        return last_name
 
     def update(self, instance, validated_data):
 
