@@ -228,7 +228,7 @@ class LoginSerializer(TokenObtainPairSerializer):
             raise ValidationError(
                 {
                     'success': False,
-                    'message': "Siz royhatdan toliq otmagansiz!"
+                    'message': "Siz ro'yhatdan to'liq o'tmagansiz!"
                 }
             )
         user = authenticate(**authentication_kwargs)
@@ -238,14 +238,14 @@ class LoginSerializer(TokenObtainPairSerializer):
             raise ValidationError(
                 {
                     'success': False,
-                    'message': "Sorry, login or password you entered is incorrect. Please check and trg again!"
+                    'message': "Sorry, login or password you entered is incorrect. Please check and try again!"
                 }
             )
 
     def validate(self, data):
         self.auth_validate(data)
         if self.user.auth_status not in [DONE, PHOTO_DONE]:
-            raise PermissionDenied("Siz login qila olmaysiz. Ruxsatingiz yoq")
+            raise PermissionDenied("Sizda login qilish uchun ruxsat yo'q!")
         data = self.user.token()
         data['auth_status'] = self.user.auth_status
         data['full_name'] = self.user.full_name
