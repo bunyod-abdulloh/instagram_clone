@@ -312,12 +312,13 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         password = data.get('password', None)
-        confirm_password = data.get('password', None)
+        confirm_password = data.get('confirm_password', None)
+        
         if password != confirm_password:
             raise ValidationError(
                 {
                     'success': False,
-                    'message': "Parollaringiz qiymati bir-biriga teng emas"
+                    'message': "Parollaringiz qiymati bir-biriga teng emas!"
                 }
             )
         if password:
