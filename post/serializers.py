@@ -53,8 +53,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_replies(self, obj):
         if obj.child.exists():
-            serializers = self.__class__(obj.child.all(), many=True, context=self.context)
-            return serializers.data
+            serializers_ = self.__class__(obj.child.all(), many=True, context=self.context)
+            return serializers_.data
         else:
             return None
 

@@ -19,6 +19,9 @@ class Post(BaseModel):
         verbose_name = "post"
         verbose_name_plural = "posts"
 
+    def __str__(self):
+        return f"{self.author} post about {self.caption}"
+
 
 class PostComment(BaseModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -31,6 +34,8 @@ class PostComment(BaseModel):
         blank=True
     )  # Comment ichidagi commentga reply qilingan xabar uchun
 
+    def __str__(self):
+        return f"{self.author}"
 
 class PostLike(BaseModel):
     # postlarga likelar bosilganini ko'rish mumkin
