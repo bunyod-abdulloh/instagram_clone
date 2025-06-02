@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'photo')
 
 
-class PostSerializer(serializers.Serializer):
+class PostSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     author = UserSerializer(read_only=True)
     post_likes_count = serializers.SerializerMethodField('get_post_likes_count')
@@ -21,23 +21,33 @@ class PostSerializer(serializers.Serializer):
 
     class Meta:
         model = Post
-        fields = ('id', 'author', 'image', 'caption', 'created_time', 'post_likes_count', 'post_comments_count',
-                  'me_liked')
+        fields = (
+            "id",
+            'author',
+            'image',
+            'caption',
+            'created_time',
+            "post_likes_count",
+            "post_comments_count",
+            "me_liked"
+        )
+        extra_kwargs = {"image": {"required": False}}
 
-    @staticmethod
-    def get_post_likes_count(obj):
+    def get_post_likes_count(self, obj):
         return obj.likes.count()
 
-    @staticmethod
-    def get_post_comments_count(obj):
+    def get_post_comments_count(self, obj):
         return obj.comments.count()
 
     def get_me_liked(self, obj):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            try:
+                like = PostLike.objects.get(post=obj, author=request.user)
+                return True
+            except PostLike.DoesNotExist:
+                return False
 
-        if user and user.is_authenticated:
-            return PostLike.objects.filter(post=obj, author=user).exists()
         return False
 
 
