@@ -25,17 +25,18 @@ class Post(BaseModel):
 
 class PostComment(BaseModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
-    comment = models.TextField(validators=[MaxLengthValidator(2000)])
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    comment = models.TextField()
     parent = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
+        related_name='child',
         null=True,
         blank=True
-    )  # Comment ichidagi commentga reply qilingan xabar uchun
+    )
 
     def __str__(self):
-        return f"{self.author}"
+        return f"comment by {self.author}"
 
 class PostLike(BaseModel):
     # postlarga likelar bosilganini ko'rish mumkin

@@ -1,9 +1,10 @@
 from rest_framework import generics, status
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from post.models import Post
-from post.serializers import PostSerializer
+from post.models import Post, PostComment
+from post.serializers import PostSerializer, CommentSerializer
 from shared.custom_pagination import CustomPagination
 
 
@@ -54,3 +55,24 @@ class PostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
                 "message": "Maqola muvaffaqiyatli o'chirildi!"
             }
         )
+
+
+class PostCommentListView(generics.ListAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [AllowAny, ]
+
+    def get_queryset(self):
+        post_id = self.kwargs['pk']
+        queryset = PostComment.objects.filter(post__id=post_id)
+        return queryset
+
+
+class PostCommentCreateView(generics.CreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs['pk']
+        post = get_object_or_404(Post, pk=post_id)
+        serializer.save(author=self.request.user, post=post)
+
