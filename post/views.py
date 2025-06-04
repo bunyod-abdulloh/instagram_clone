@@ -1,6 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from post.models import Post, PostComment
@@ -76,3 +76,15 @@ class PostCommentCreateView(generics.CreateAPIView):
         post = get_object_or_404(Post, pk=post_id)
         serializer.save(author=self.request.user, post=post)
 
+
+class CommentListCreateApiView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, ]
+    queryset = PostComment.objects.all()
+    pagination_class = CustomPagination
+
+    def perform_create(self, serializer):
+        post_id = self.request.data.get('post')
+        if not post_id:
+            raise serializers.ValidationError({"post": "Post ID yuborilishi shart."})
+        serializer.save(author=self.request.user, post_id=post_id)
