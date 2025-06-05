@@ -1,10 +1,12 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, serializers
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from post.models import Post, PostComment
-from post.serializers import PostSerializer, CommentSerializer
+from post.models import Post, PostComment, PostLike, CommentLike
+from post.serializers import PostSerializer, CommentSerializer, PostLikeSerializer, CommentLikeSerializer
 from shared.custom_pagination import CustomPagination
 
 
@@ -88,3 +90,73 @@ class CommentListCreateApiView(generics.ListCreateAPIView):
         if not post_id:
             raise serializers.ValidationError({"post": "Post ID yuborilishi shart."})
         serializer.save(author=self.request.user, post_id=post_id)
+
+
+class CommentRetrieveView(generics.RetrieveAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [AllowAny, ]
+    queryset = PostComment.objects.all()
+
+
+class PostLikeListView(generics.ListAPIView):
+    serializer_class = PostLikeSerializer
+    permission_classes = [AllowAny, ]
+
+    def get_queryset(self):
+        post_id = self.kwargs['pk']
+        return PostLike.objects.filter(post_id=post_id)
+
+
+class CommentLikeListView(generics.ListAPIView):
+    serializer_class = CommentLikeSerializer
+    permission_classes = [AllowAny, ]
+
+    def get_queryset(self):
+        comment_id = self.kwargs['pk']
+        return CommentLike.objects.filter(comment_id=comment_id)
+
+
+class AllLikesApiView(generics.ListAPIView):
+    serializer_class = PostLikeSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get_queryset(self):
+        return PostLike.objects.all()
+
+
+class LikesCreateApiView(generics.CreateAPIView):
+    serializer_class = PostLikeSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def perform_create(self, serializer):
+        post_id = self.request.data.get('post')
+        if not post_id:
+            raise serializers.ValidationError({"post": "Post ID yuborilishi shart."})
+        serializer.save(author=self.request.user, post_id=post_id)
+
+
+class CustomDestroyLikeApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, post_id):
+        # Avval post mavjudligini tekshiramiz
+        try:
+            post = Post.objects.get(id=post_id)
+            print(post)
+        except Post.DoesNotExist:
+            raise NotFound(detail=f"{post_id} ID raqamli post mavjud emas.")
+
+        # Keyin like mavjudligini tekshiramiz
+        like = PostLike.objects.filter(post=post, author=request.user).first()
+        if not like:
+            raise NotFound(detail=f"Siz bu postga like bosmagansiz.")
+
+        like.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": f"{post_id} postga qo‘yilgan like o‘chirildi."
+            },
+            status=status.HTTP_200_OK
+        )

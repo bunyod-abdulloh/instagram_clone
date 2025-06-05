@@ -20,7 +20,7 @@ class Post(BaseModel):
         verbose_name_plural = "posts"
 
     def __str__(self):
-        return f"{self.author} post about {self.caption}"
+        return f"post haqida {self.caption}"
 
 
 class PostComment(BaseModel):
@@ -36,7 +36,7 @@ class PostComment(BaseModel):
     )
 
     def __str__(self):
-        return f"comment by {self.author}"
+        return f"comment by {self.post}"
 
 class PostLike(BaseModel):
     # postlarga likelar bosilganini ko'rish mumkin
