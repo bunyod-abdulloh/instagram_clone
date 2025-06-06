@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import PostListApiView, PostCreateView, PostRetrieveUpdateDestroyView, PostCommentListView, \
     PostCommentCreateView, CommentListCreateApiView, PostLikeListView, CommentRetrieveView, CommentLikeListView, \
-    AllLikesApiView, LikesCreateApiView, CustomDestroyLikeApiView
+    AllLikesApiView, PostLikeApiView, CommentLikeApiView
 
 urlpatterns = [
     path('list/', PostListApiView.as_view(), ),
@@ -15,6 +15,6 @@ urlpatterns = [
     path('comments/<uuid:pk>/', CommentRetrieveView.as_view(), ),
     path('comments/<uuid:pk>/likes/', CommentLikeListView.as_view(), ),
     path('likes/', AllLikesApiView.as_view(), ),
-    path('likes/<uuid:pk>/create/', LikesCreateApiView.as_view(), ),
-    path('likes/<uuid:post_id>/delete/', CustomDestroyLikeApiView.as_view(), name='delete-like'),
+    path('<uuid:pk>/like/create-delete-like/', PostLikeApiView.as_view(), ),
+    path('<uuid:pk>/comment/create-delete-like/', CommentLikeApiView.as_view(), ),
 ]

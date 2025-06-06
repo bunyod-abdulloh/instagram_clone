@@ -1,5 +1,4 @@
 from rest_framework import generics, status, serializers
-from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -124,39 +123,57 @@ class AllLikesApiView(generics.ListAPIView):
         return PostLike.objects.all()
 
 
-class LikesCreateApiView(generics.CreateAPIView):
-    serializer_class = PostLikeSerializer
-    permission_classes = [IsAuthenticated, ]
+class PostLikeApiView(APIView):
 
-    def perform_create(self, serializer):
-        post_id = self.request.data.get('post')
-        if not post_id:
-            raise serializers.ValidationError({"post": "Post ID yuborilishi shart."})
-        serializer.save(author=self.request.user, post_id=post_id)
-
-
-class CustomDestroyLikeApiView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, post_id):
-        # Avval post mavjudligini tekshiramiz
+    def post(self, request, pk):
         try:
-            post = Post.objects.get(id=post_id)
-            print(post)
-        except Post.DoesNotExist:
-            raise NotFound(detail=f"{post_id} ID raqamli post mavjud emas.")
+            post_like = PostLike.objects.get(
+                author=self.request.user,
+                post_id=pk
+            )
+            post_like.delete()
+            data = {
+                "status": True,
+                "message": "LIKE muvaffaqiyatli o'chirildi!"
+            }
+            return Response(data=data, status=status.HTTP_204_NO_CONTENT)
+        except PostLike.DoesNotExist:
+            post_like = PostLike.objects.create(
+                author=self.request.user,
+                post_id=pk
+            )
+            serializer = PostLikeSerializer(post_like)
+            data = {
+                "status": True,
+                "message": "Postga LIKE muvaffaqiyatli qo'shildi!",
+                "data": serializer.data
+            }
+            return Response(data=data, status=status.HTTP_201_CREATED)
 
-        # Keyin like mavjudligini tekshiramiz
-        like = PostLike.objects.filter(post=post, author=request.user).first()
-        if not like:
-            raise NotFound(detail=f"Siz bu postga like bosmagansiz.")
 
-        like.delete()
+class CommentLikeApiView(APIView):
 
-        return Response(
-            {
-                "success": True,
-                "message": f"{post_id} postga qo‘yilgan like o‘chirildi."
-            },
-            status=status.HTTP_200_OK
-        )
+    def post(self, request, pk):
+        try:
+            comment_like = CommentLike.objects.get(
+                author=self.request.user,
+                comment_id=pk
+            )
+            comment_like.delete()
+            data = {
+                "status": True,
+                "message": "Izohga qo'yilgan LIKE o'chirildi!"
+            }
+            return Response(data=data, status=status.HTTP_204_NO_CONTENT)
+        except CommentLike.DoesNotExist:
+            comment_like = CommentLike.objects.create(
+                author=self.request.user,
+                comment_id=pk
+            )
+            serializer = CommentLikeSerializer(comment_like)
+            data = {
+                "status": True,
+                "message": "Izohga LIKE muvaffaqiyatli qo'shildi!",
+                "data": serializer.data
+            }
+            return Response(data=data, status=status.HTTP_201_CREATED)
